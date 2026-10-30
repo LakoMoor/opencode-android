@@ -1,0 +1,10 @@
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+
+runtime/downloads/
+app/src/main/assets/runtime/
+app/src/main/jniLibs/
+__pycache__/

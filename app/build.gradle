@@ -1,0 +1,17 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'ai.opencode.android'
+    compileSdk 36
+    defaultConfig { applicationId 'ai.opencode.android'; minSdk 26; targetSdk 28; versionCode 4; versionName '0.3.1'; testInstrumentationRunner 'ai.opencode.android.RuntimeSmoke' }
+    // PRoot must execute guest ELF files in app-private storage; Android blocks this for target >= 29.
+    // This APK is distributed directly, so the Google Play target requirement does not apply.
+    lint { disable 'ExpiredTargetSdkVersion' }
+    packaging { jniLibs { useLegacyPackaging true; keepDebugSymbols += ['**/*.so'] } }
+    androidResources { noCompress += ['tgz'] }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+    implementation 'org.apache.commons:commons-compress:1.27.1'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+}

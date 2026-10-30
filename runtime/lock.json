@@ -1,0 +1,46 @@
+{
+  "opencodeVersion": "2.2.2",
+  "upstreamCommit": "34aaa9054bcd397027b0869a5ba83b2489129fcd",
+  "artifacts": [
+    {
+      "name": "opencode-linux-arm64.tar.gz",
+      "url": "https://github.com/anomalyco/opencode/releases/download/v2.2.2/opencode-linux-arm64.tar.gz",
+      "sha256": "dd866cebb72d11c91a7a7c4c3fd961ee06e03a9d0a5ff8eaa2a8ebebf25de7ba",
+      "kind": "asset"
+    },
+    {
+      "name": "ubuntu-base-24.04.5-base-arm64.tar.gz",
+      "url": "https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.5-base-arm64.tar.gz",
+      "sha256": "a91d5a93010193712d346d761372b7c9db6dfcf093893161c64ca107f05914f2",
+      "kind": "asset"
+    },
+    {
+      "name": "libandroid-shmem_0.7_aarch64.deb",
+      "url": "https://packages.termux.dev/apt/termux-main/pool/main/liba/libandroid-shmem/libandroid-shmem_0.7_aarch64.deb",
+      "sha256": "0da3a24d558b93c92bcf8d611e0826a99ff96e396b148e6cdf33b47c47c57ff6",
+      "kind": "deb",
+      "files": {
+        "lib/libandroid-shmem.so": "libandroid-shmem.so"
+      }
+    },
+    {
+      "name": "libtalloc_2.5.0_aarch64.deb",
+      "url": "https://packages.termux.dev/apt/termux-main/pool/main/libt/libtalloc/libtalloc_2.5.0_aarch64.deb",
+      "sha256": "556591f43bb773ad8777e1a29522640866a55f95dab71914418b94a8c58ad5a7",
+      "kind": "deb",
+      "files": {
+        "lib/libtalloc.so.2.5.0": "libtalloc.so"
+      }
+    },
+    {
+      "name": "proot_5.1.107.101_aarch64.deb",
+      "url": "https://packages.termux.dev/apt/termux-main/pool/main/p/proot/proot_5.1.107.101_aarch64.deb",
+      "sha256": "a28355e9be257e1f87f4e9294b3118470d4fd7a5442fed8b278f4443c83407d7",
+      "kind": "deb",
+      "files": {
+        "bin/proot": "libproot.so",
+        "libexec/proot/loader": "libproot-loader.so"
+      }
+    }
+  ]
+}
