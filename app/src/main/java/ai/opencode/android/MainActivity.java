@@ -10,56 +10,115 @@ import android.text.InputType;
 import android.view.*;
 import android.widget.*;
 import org.json.*;
+import java.io.File;
 import java.util.concurrent.*;
 
-/** Android bootstrap only; all coding screens are provided by the original OpenCode app. */
+/** Home screen: launches the original OpenCode UI and hosts the app's own tools (models, hub, terminal, island, updates). */
 public class MainActivity extends Activity {
-    private final int muted=0xff93a090;
+    private final int muted=Ui.MUTED, TEXT=Ui.TEXT;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
-    private TextView status;
+    private Ui ui;
+    private TextView status, dot, modelLine, cursor;
     private Button launch;
+    private LinearLayout updateSlot, islandRow;
+    private TextView islandState;
+    private ProgressBar progress;
     private boolean active,opening;
-    @Override public void onCreate(Bundle state) { super.onCreate(state); build(); if(state==null&&!RuntimeService.running&&!RuntimeService.ready) start(); }
-    private static final int BG=0xff101211,CARD=0xff1b1e1c,ACCENT=0xffb9f589,TEXT=0xfff2f4f1;
-    private android.widget.ProgressBar progress;
-    private int dp(int n) { return (int)(getResources().getDisplayMetrics().density*n); }
-    private TextView text(String value,int size,int color) { TextView t=new TextView(this);t.setText(value);t.setTextSize(size);t.setTextColor(color);t.setLineSpacing(0,1.15f);return t; }
-    private LinearLayout column() { LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);return l; }
-    private GradientDrawable shape(int fill,int stroke,int radius) { GradientDrawable g=new GradientDrawable();g.setColor(fill);g.setCornerRadius(dp(radius));if(stroke!=0)g.setStroke(dp(1),stroke);return g; }
-    private Button button(String value,boolean primary,Runnable action) {
-        Button b=new Button(this);b.setText(value);b.setAllCaps(false);b.setTextSize(primary?17:15);b.setTypeface(Typeface.DEFAULT,primary?Typeface.BOLD:Typeface.NORMAL);
-        b.setTextColor(primary?0xff0d1a05:TEXT);b.setStateListAnimator(null);b.setMinHeight(dp(primary?56:48));b.setMinimumHeight(dp(primary?56:48));
-        b.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x33ffffff),primary?shape(ACCENT,0,16):shape(CARD,0xff2e332f,16),null));
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(10);b.setLayoutParams(lp);b.setOnClickListener(v->action.run());return b;
+    private Updater.Release release;
+    @Override public void onCreate(Bundle state) { super.onCreate(state); ui=new Ui(this); build(); if(state==null&&!RuntimeService.running&&!RuntimeService.ready) start(); checkUpdate(false); }
+    private int dp(int n) { return ui.dp(n); }
+    private TextView text(String value,int size,int color) { return ui.text(value,size,color); }
+    private LinearLayout column() { return ui.column(); }
+    private Button button(String value,boolean primary,Runnable action) { return ui.button(value,primary,action); }
+
+    private LinearLayout tile(String glyph,String title,String sub,int color,Runnable tap) {
+        LinearLayout t=ui.column();t.setBackground(ui.ripple(Ui.PANEL,Ui.LINE,14));t.setPadding(dp(14),dp(14),dp(14),dp(14));t.setOnClickListener(v->tap.run());
+        t.addView(ui.mono(glyph,22,color));TextView a=ui.mono(title,15,Ui.TEXT);a.setTypeface(Typeface.MONOSPACE,Typeface.BOLD);a.setPadding(0,dp(10),0,0);t.addView(a);
+        TextView b=text(sub,12,Ui.MUTED);b.setPadding(0,dp(2),0,0);t.addView(b);return t;
     }
-    private LinearLayout card() { LinearLayout c=column();c.setBackground(shape(CARD,0xff2e332f,20));c.setPadding(dp(18),dp(16),dp(18),dp(18));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(18);c.setLayoutParams(lp);return c; }
+    private LinearLayout pair(View left,View right) {
+        LinearLayout r=new LinearLayout(this);r.setOrientation(LinearLayout.HORIZONTAL);r.setLayoutParams(ui.lp(-1,-2,10));
+        LinearLayout.LayoutParams a=new LinearLayout.LayoutParams(0,-1,1),b=new LinearLayout.LayoutParams(0,-1,1);a.rightMargin=dp(5);b.leftMargin=dp(5);r.addView(left,a);r.addView(right,b);return r;
+    }
     private void build() {
-        getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);
-        ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(BG);scroll.setFillViewport(true);scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        LinearLayout content=column();content.setPadding(dp(22),dp(28),dp(22),dp(24));
-        TextView logo=text("opencode",30,ACCENT);logo.setTypeface(Typeface.MONOSPACE,Typeface.BOLD);content.addView(logo);
-        TextView tag=text(L.t("A full AI coding agent right on your phone — no computer, and no internet needed to install.","Полноценный AI-агент для кода — прямо на телефоне, без компьютера и интернета для установки."),15,muted);tag.setPadding(0,dp(8),0,0);content.addView(tag);
-        LinearLayout hero=card();
-        TextView stateTitle=text(L.t("Status","Состояние"),12,muted);hero.addView(stateTitle);
-        status=text(RuntimeService.state,17,TEXT);status.setTypeface(Typeface.DEFAULT,Typeface.BOLD);status.setPadding(0,dp(6),0,dp(12));hero.addView(status);
-        progress=new android.widget.ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);progress.setIndeterminate(true);progress.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(ACCENT));progress.setVisibility(View.GONE);hero.addView(progress,new LinearLayout.LayoutParams(-1,dp(4)));
-        launch=button(L.t("Start OpenCode","Запустить OpenCode"),true,this::start);hero.addView(launch);
+        getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
+        ScrollView scroll=new ScrollView(this);scroll.setBackgroundColor(Ui.BG);scroll.setFillViewport(true);scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        LinearLayout content=column();content.setPadding(dp(20),dp(36),dp(20),dp(28));
+        LinearLayout logo=ui.row();
+        TextView open=ui.mono("open",34,Ui.MUTED);open.setTypeface(Typeface.MONOSPACE,Typeface.BOLD);logo.addView(open);
+        TextView code=ui.mono("code",34,Ui.TEXT);code.setTypeface(Typeface.MONOSPACE,Typeface.BOLD);logo.addView(code);
+        cursor=ui.mono("▌",34,Ui.ACCENT);logo.addView(cursor);
+        android.animation.ObjectAnimator blink=android.animation.ObjectAnimator.ofFloat(cursor,"alpha",1f,1f,0f,0f);blink.setDuration(1100);blink.setRepeatCount(android.animation.ValueAnimator.INFINITE);blink.start();
+        content.addView(logo);
+        TextView tag=ui.mono(L.t("the open source coding agent, in your pocket","открытый кодинг-агент — у вас в кармане"),12,Ui.MUTED);tag.setPadding(0,dp(6),0,0);content.addView(tag);
+        updateSlot=column();content.addView(updateSlot);
+
+        LinearLayout hero=column();hero.setBackground(ui.shape(Ui.PANEL,Ui.LINE,16));hero.setPadding(dp(16),dp(14),dp(16),dp(16));hero.setLayoutParams(ui.lp(-1,-2,22));
+        LinearLayout head=ui.row();dot=ui.mono("●",14,Ui.DIM);head.addView(dot);
+        TextView title=ui.mono("  opencode serve",13,Ui.MUTED);head.addView(title);hero.addView(head);
+        status=text(RuntimeService.state,16,Ui.TEXT);status.setPadding(0,dp(10),0,dp(4));hero.addView(status);
+        modelLine=ui.mono("",12,Ui.MUTED);hero.addView(modelLine);
+        progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);progress.setIndeterminate(true);progress.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Ui.ACCENT));progress.setVisibility(View.GONE);hero.addView(progress,ui.lp(-1,dp(3),10));
+        launch=button(L.t("Start OpenCode","Запустить OpenCode"),true,this::start);launch.setLayoutParams(ui.lp(-1,-2,14));hero.addView(launch);
         content.addView(hero);
-        TextView more=text(L.t("Tools","Инструменты"),12,muted);more.setPadding(dp(4),dp(24),0,dp(2));content.addView(more);
-        content.addView(button(L.t("OpenCode terminal (TUI)","Терминал OpenCode (TUI)"),false,()->terminal("opencode")));
-        content.addView(button(L.t("Linux shell (bash)","Оболочка Linux (bash)"),false,()->terminal("bash")));
+
+        content.addView(ui.section(L.t("workspace","рабочее место")));
+        content.addView(pair(tile("◆",L.t("Models","Модели"),L.t("Run LLMs on the phone · Hugging Face","LLM на телефоне · Hugging Face"),Ui.ACCENT,()->startActivity(new Intent(this,ModelsActivity.class))),
+            tile("✦",L.t("Hub","Хаб"),L.t("Skills · plugins · MCP · agents","Навыки · плагины · MCP · агенты"),Ui.PURPLE,()->startActivity(new Intent(this,HubActivity.class)))));
+        content.addView(pair(tile(">_",L.t("TUI","TUI"),L.t("Original terminal interface","Оригинальный терминальный интерфейс"),Ui.GREEN,()->terminal("opencode")),
+            tile("$",L.t("Shell","Оболочка"),L.t("Ubuntu bash · git · python","Ubuntu bash · git · python"),Ui.BLUE,()->terminal("bash"))));
+
+        content.addView(ui.section(L.t("system","система")));
+        islandRow=ui.column();content.addView(islandRow);
         content.addView(button(L.t("Custom OpenAI-compatible server","Свой OpenAI-compatible сервер"),false,this::provider));
+        content.addView(button(L.t("Check for updates","Проверить обновления"),false,()->checkUpdate(true)));
         content.addView(button(L.t("Local environment log","Журнал локальной среды"),false,this::logs));
         content.addView(button(L.t("Stop the core","Остановить ядро"),false,()->{stopService(new Intent(this,RuntimeService.class));opening=false;}));
-        TextView note=text(L.t("Everything is inside the APK: Ubuntu, Git, Python, curl, ripgrep, SSH. The first launch unpacks the environment (about a minute, no internet needed; ~1.5 GB of storage). Back on the work screen returns here; projects live in /workspace.","Всё уже внутри APK: Ubuntu, Git, Python, curl, ripgrep, SSH. Первый запуск распаковывает среду (около минуты, интернет не нужен; нужно ~1,5 ГБ памяти). Кнопка «Назад» в рабочем экране возвращает сюда, проекты лежат в /workspace."),12,muted);note.setPadding(dp(4),dp(22),dp(4),0);content.addView(note);
+        TextView note=ui.mono("v"+Updater.current(this)+"  ·  github.com/"+Updater.REPO,11,Ui.DIM);note.setPadding(dp(2),dp(24),0,0);content.addView(note);
         scroll.addView(content);setContentView(scroll);
+    }
+    private void drawIsland() {
+        islandRow.removeAllViews();
+        boolean on=Island.enabled(this),perm=Island.allowed(this);
+        String sub=!perm?L.t("needs the “display over other apps” permission — tap to grant","нужно разрешение «поверх других окон» — нажмите, чтобы выдать"):on?L.t("pill over the camera shows agent progress, questions and results","капсула над камерой показывает прогресс, вопросы и результат"):L.t("off — notifications only","выключен — только уведомления");
+        islandRow.addView(ui.item(L.t("Dynamic island","Dynamic island"),sub,on&&perm?"on":"off",on&&perm?Ui.GREEN:Ui.DIM,()->{
+            if(!perm){Island.requestPermission(this);return;}
+            Island.setEnabled(this,!on);drawIsland();if(!on)Island.notifyEvent(this,Island.INFO,L.t("Dynamic island is on","Dynamic island включён"),"OpenCode");
+        }));
+    }
+    private void checkUpdate(boolean manual) {
+        long last=getSharedPreferences("runtime",0).getLong("updateCheck",0);
+        if(!manual&&System.currentTimeMillis()-last<6*3600*1000L) return;
+        worker.execute(() -> { try {
+            Updater.Release r=Updater.latest(); getSharedPreferences("runtime",0).edit().putLong("updateCheck",System.currentTimeMillis()).apply();
+            boolean fresh=r!=null&&Updater.newer(r.tag,Updater.current(this));
+            runOnUiThread(() -> { if(isDestroyed()) return; release=fresh?r:null; drawUpdate(); if(manual&&!fresh) Toast.makeText(this,L.t("You have the latest version","У вас последняя версия"),Toast.LENGTH_SHORT).show(); });
+        } catch(Exception e) { if(manual) runOnUiThread(() -> Toast.makeText(this,L.t("Could not check: ","Не удалось проверить: ")+e.getMessage(),Toast.LENGTH_LONG).show()); } });
+    }
+    private void drawUpdate() {
+        updateSlot.removeAllViews(); if(release==null) return;
+        LinearLayout c=ui.item(L.t("Update available: ","Доступно обновление: ")+release.tag,L.t("Tap to download and install ("+(release.size>>20)+" MB)","Нажмите, чтобы скачать и установить ("+(release.size>>20)+" МБ)"),"↓",Ui.ACCENT,this::downloadUpdate);
+        c.setBackground(ui.ripple(0xff1d1510,Ui.ACCENT,12));((LinearLayout.LayoutParams)c.getLayoutParams()).topMargin=dp(18);updateSlot.addView(c);
+    }
+    private void downloadUpdate() {
+        Updater.Release r=release; if(r==null) return;
+        Toast.makeText(this,L.t("Downloading the update…","Скачиваем обновление…"),Toast.LENGTH_SHORT).show();
+        worker.execute(() -> { try {
+            File apk=Updater.download(this,r,(d,t) -> runOnUiThread(() -> { if(t>0&&!isDestroyed()) status.setText(L.t("Downloading update ","Скачиваем обновление ")+(d*100/t)+"%"); }));
+            runOnUiThread(() -> { if(!isDestroyed()&&!Updater.install(this,apk)) Toast.makeText(this,L.t("Allow installing from this app, then tap the update again","Разрешите установку из этого приложения и нажмите на обновление снова"),Toast.LENGTH_LONG).show(); });
+        } catch(Exception e) { runOnUiThread(() -> Toast.makeText(this,L.t("Update failed: ","Не удалось обновить: ")+e.getMessage(),Toast.LENGTH_LONG).show()); } });
     }
     private void terminal(String command) { startActivity(new Intent(this,TerminalActivity.class).putExtra(TerminalActivity.EXTRA_COMMAND,command)); }
     private void start() { opening=true; if(RuntimeService.ready) { open();return; } startForegroundService(new Intent(this,RuntimeService.class));status.setText(L.t("Starting…","Запускаем…")); }
     private void open() { if(!RuntimeService.ready) return;opening=false;startActivity(new Intent(this,WebActivity.class)); }
-    private final Runnable refresh=new Runnable(){ public void run(){if(!active)return;status.setText(RuntimeService.state);launch.setText(RuntimeService.ready?L.t("Open OpenCode","Открыть OpenCode"):RuntimeService.running?L.t("Preparing the environment…","Подготовка среды…"):L.t("Start OpenCode","Запустить OpenCode"));launch.setEnabled(!RuntimeService.running||RuntimeService.ready);launch.setAlpha(launch.isEnabled()?1f:0.5f);progress.setVisibility(RuntimeService.running&&!RuntimeService.ready?View.VISIBLE:View.GONE);if(opening&&RuntimeService.ready)open();handler.postDelayed(this,700);} };
-    @Override protected void onResume(){super.onResume();active=true;handler.post(refresh);}
+    private final Runnable refresh=new Runnable(){ public void run(){if(!active)return;
+        if(RuntimeService.openWhenReady){RuntimeService.openWhenReady=false;opening=true;if(!RuntimeService.running)startForegroundService(new Intent(MainActivity.this,RuntimeService.class));}
+        status.setText(RuntimeService.state);launch.setText(RuntimeService.ready?L.t("Open OpenCode","Открыть OpenCode"):RuntimeService.running?L.t("Preparing the environment…","Подготовка среды…"):L.t("Start OpenCode","Запустить OpenCode"));launch.setEnabled(!RuntimeService.running||RuntimeService.ready);launch.setAlpha(launch.isEnabled()?1f:0.5f);progress.setVisibility(RuntimeService.running&&!RuntimeService.ready?View.VISIBLE:View.GONE);
+        dot.setTextColor(RuntimeService.ready?Ui.GREEN:RuntimeService.running?Ui.ACCENT:Ui.DIM);
+        modelLine.setText(RuntimeService.llamaReady?"◆ "+RuntimeService.llamaModel:RuntimeService.llamaRunning?"◇ "+RuntimeService.llamaState:"");modelLine.setVisibility(modelLine.length()==0?View.GONE:View.VISIBLE);
+        if(opening&&RuntimeService.ready)open();handler.postDelayed(this,700);} };
+    @Override protected void onResume(){super.onResume();active=true;handler.post(refresh);drawIsland();}
     @Override protected void onPause(){active=false;handler.removeCallbacks(refresh);super.onPause();}
     @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
     private void error(String message){new AlertDialog.Builder(this).setTitle("OpenCode").setMessage(message).setPositiveButton(L.t("OK","Понятно"),null).show();}

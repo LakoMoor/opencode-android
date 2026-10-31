@@ -50,7 +50,7 @@ final class LocalRuntime {
     }
     /** Dev tools ship pre-extracted inside the APK: unpacking takes seconds, no network, no dpkg under PRoot. */
     private void ensureTools() throws Exception {
-        File marker=new File(root,"root/.opencode-android-tools-v3");
+        File marker=new File(root,"root/.opencode-android-tools-v5");
         if(marker.exists()) return;
         extract(context.getAssets().open("runtime/tools-overlay.tgz"),root);
         write(marker,"1\n");
@@ -69,6 +69,22 @@ final class LocalRuntime {
         progress.update(L.t("Starting the local core…","Запускаем локальное ядро…"));
         return builder.start();
     }
+    File modelsDir() { File d=new File(context.getFilesDir(),"models"); d.mkdirs(); return d; }
+    /** Local model server: official llama.cpp (bundled in /opt/llama) serving an OpenAI-compatible API on 127.0.0.1. */
+    Process startLlama(String model,int port,int ctx) throws Exception {
+        File temp=new File(context.getCacheDir(),"proot"); temp.mkdirs();
+        String nativeDir=context.getApplicationInfo().nativeLibraryDir;
+        int threads=Math.max(2,Math.min(6,Runtime.getRuntime().availableProcessors()/2+1));
+        List<String> cmd=new ArrayList<>(Arrays.asList(nativeDir+"/libproot.so","--link2symlink","--kill-on-exit","-0","-r",root.getAbsolutePath(),"-b","/dev","-b","/proc","-b","/sys","-b",modelsDir().getAbsolutePath()+":/models","-w","/tmp","/usr/bin/env","-i","HOME=/root","LANG=C.UTF-8","LD_LIBRARY_PATH=/opt/llama","TMPDIR=/tmp","/opt/llama/llama-server","-m","/models/"+model,"--host","127.0.0.1","--port",String.valueOf(port),"-c",String.valueOf(ctx),"-t",String.valueOf(threads),"--jinja","--alias","local"));
+        ProcessBuilder builder=new ProcessBuilder(cmd).redirectErrorStream(true);
+        builder.environment().put("LD_LIBRARY_PATH",new File(context.getFilesDir(),"runtime-libs").getAbsolutePath()+":"+nativeDir);
+        builder.environment().put("PROOT_LOADER",nativeDir+"/libproot-loader.so");
+        builder.environment().put("PROOT_TMP_DIR",temp.getAbsolutePath());
+        builder.environment().put("PROOT_NO_SECCOMP","1");
+        builder.environment().put("TMPDIR",temp.getAbsolutePath());
+        return builder.start();
+    }
+    File configDir() { File d=new File(root,"root/.config/opencode"); d.mkdirs(); return d; }
     /** Interactive terminal: "opencode" starts the original TUI, anything else opens an interactive bash. */
     Process startTerminal(String command,int rows,int cols) throws Exception {
         File projects=new File(context.getFilesDir(),"projects"); projects.mkdirs();
@@ -85,13 +101,14 @@ final class LocalRuntime {
         builder.environment().put("TMPDIR",temp.getAbsolutePath());
         return builder.start();
     }
-    void configure(String base,String key,String model) throws Exception {
+    void configure(String base,String key,String model) throws Exception { configure("myserver","My OpenAI-compatible server",base,key,model); }
+    void configure(String id,String title,String base,String key,String model) throws Exception {
         File directory=new File(root,"root/.config/opencode"); directory.mkdirs();
         File file=new File(directory,"opencode.json");
         JSONObject config=file.exists()?new JSONObject(new String(Files.readAllBytes(file.toPath()),StandardCharsets.UTF_8)):new JSONObject();
         JSONObject providers=config.optJSONObject("providers"); if(providers==null) providers=new JSONObject();
-        JSONObject provider=new JSONObject().put("name","My OpenAI-compatible server").put("package","@opencode/ai/providers/openai-compatible").put("settings",new JSONObject().put("baseURL",base).put("apiKey",key)).put("models",new JSONObject().put(model,new JSONObject().put("name",model).put("capabilities",new JSONObject().put("tools",true).put("input",new JSONArray().put("text")).put("output",new JSONArray().put("text")))));
-        providers.put("myserver",provider); config.put("providers",providers).put("model","myserver/"+model);
+        JSONObject provider=new JSONObject().put("name",title).put("package","@opencode/ai/providers/openai-compatible").put("settings",new JSONObject().put("baseURL",base).put("apiKey",key)).put("models",new JSONObject().put(model,new JSONObject().put("name",model).put("capabilities",new JSONObject().put("tools",true).put("input",new JSONArray().put("text")).put("output",new JSONArray().put("text")))));
+        providers.put(id,provider); config.put("providers",providers).put("model",id+"/"+model);
         write(file,config.toString(2));
         file.setReadable(false,false); file.setReadable(true,true); file.setWritable(false,false); file.setWritable(true,true);
     }

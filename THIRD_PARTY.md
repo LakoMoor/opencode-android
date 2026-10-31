@@ -15,4 +15,5 @@ License texts are included under Android assets `licenses/` and within the Ubunt
 
 Before publishing a binary distribution, distribute the complete corresponding source and build materials for GPL components alongside the APK, and retain their notices. The source URLs and lock file document the ingredients for development; they do not replace the distributor's source obligations.
 
+- llama.cpp b12017 (MIT) — local model server, the official Ubuntu arm64 release build bundled at `/opt/llama` (SHA-256 pinned in `scripts/prepare-tools.py`); license in `assets/licenses/llama.cpp-MIT.txt`.
 - xterm.js 5.3.0 and xterm-addon-fit 0.8.0 (MIT) — terminal emulator, bundled in `assets/terminal`; license in `assets/licenses/xterm.js-MIT.txt`.

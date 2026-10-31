@@ -2,7 +2,16 @@ plugins { id 'com.android.application' }
 android {
     namespace 'ai.opencode.android'
     compileSdk 36
-    defaultConfig { applicationId 'ai.opencode.android'; minSdk 26; targetSdk 28; versionCode 4; versionName '0.3.1'; testInstrumentationRunner 'ai.opencode.android.RuntimeSmoke' }
+    defaultConfig { applicationId 'ai.opencode.android'; minSdk 26; targetSdk 28; versionCode 5; versionName '0.4.0'; testInstrumentationRunner 'ai.opencode.android.RuntimeSmoke' }
+    // Stable signing key (from env / CI secrets) so in-app updates install over the previous version; falls back to the debug key.
+    signingConfigs {
+        if (System.getenv('KEYSTORE_FILE')) {
+            release { storeFile file(System.getenv('KEYSTORE_FILE')); storePassword System.getenv('KEYSTORE_PASSWORD'); keyAlias 'opencode'; keyPassword System.getenv('KEYSTORE_PASSWORD') }
+        }
+    }
+    buildTypes {
+        debug { if (System.getenv('KEYSTORE_FILE')) signingConfig signingConfigs.release }
+    }
     // PRoot must execute guest ELF files in app-private storage; Android blocks this for target >= 29.
     // This APK is distributed directly, so the Google Play target requirement does not apply.
     lint { disable 'ExpiredTargetSdkVersion' }
@@ -12,6 +21,7 @@ android {
 }
 dependencies {
     implementation 'org.apache.commons:commons-compress:1.27.1'
+    implementation 'androidx.core:core:1.13.1'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20240303'
 }

@@ -9,9 +9,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CACHE = ROOT / 'runtime' / 'downloads'
 ASSETS = ROOT / 'app/src/main/assets/runtime'
 MIRROR = 'https://ports.ubuntu.com/ubuntu-ports'
-WANT = ['ca-certificates', 'git', 'curl', 'ripgrep', 'openssh-client', 'python3', 'unzip', 'libstdc++6', 'libatomic1']
+WANT = ['ca-certificates', 'git', 'curl', 'ripgrep', 'openssh-client', 'python3', 'unzip', 'libstdc++6', 'libatomic1', 'libgomp1', 'libssl3t64']
 POCKETS = ['noble', 'noble-updates', 'noble-security']
 COMPONENTS = ['main', 'universe']
+LLAMA_TAG = 'b12017'
+LLAMA_SHA256 = '676e8f99db67fbecd7854b948ed50d0bf5d7db463613fc8fcd8f4491a7709bec'
+LLAMA_URL = f'https://github.com/ggml-org/llama.cpp/releases/download/{LLAMA_TAG}/llama-{LLAMA_TAG}-bin-ubuntu-arm64.tar.gz'
 
 def fetch(url):
     with urllib.request.urlopen(url, timeout=60) as r: return r.read()
@@ -79,6 +82,18 @@ def main():
     # Pre-extracted overlay: the phone just unpacks it, no dpkg/PRoot work at first launch.
     for junk in ('usr/share/doc', 'usr/share/man', 'usr/share/locale', 'usr/share/info', 'usr/share/lintian', 'var'):
         shutil.rmtree(stage / junk, ignore_errors=True)
+    # llama.cpp (official glibc arm64 build): only the server and its libraries go into /opt/llama.
+    llama = CACHE / f'llama-{LLAMA_TAG}-ubuntu-arm64.tar.gz'
+    if not llama.exists() or hashlib.sha256(llama.read_bytes()).hexdigest() != LLAMA_SHA256:
+        print('Downloading llama.cpp', LLAMA_TAG, flush=True); llama.write_bytes(fetch(LLAMA_URL))
+        if hashlib.sha256(llama.read_bytes()).hexdigest() != LLAMA_SHA256: raise SystemExit('Checksum mismatch: llama.cpp')
+    unpack = CACHE / 'llama-unpacked'
+    if unpack.exists(): shutil.rmtree(unpack)
+    unpack.mkdir(); subprocess.run(['tar', '-xzf', str(llama), '-C', str(unpack)], check=True)
+    src = next(unpack.iterdir()); dst = stage / 'opt/llama'; dst.mkdir(parents=True)
+    for f in src.iterdir():
+        if f.name == 'LICENSE' or f.name == 'llama-server' or (f.name.startswith('lib') and '.so' in f.name and ('impl' not in f.name or f.name.startswith(('libllama-server-impl','libllama-fit-params-impl'))) and 'rpc' not in f.name):
+            shutil.copy2(f, dst / f.name, follow_symlinks=False)
     certs = sorted((stage / 'usr/share/ca-certificates').rglob('*.crt'))
     (stage / 'etc/ssl/certs').mkdir(parents=True, exist_ok=True)
     (stage / 'etc/ssl/certs/ca-certificates.crt').write_bytes(b''.join(c.read_bytes() for c in certs))

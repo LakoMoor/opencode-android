@@ -1,4 +1,4 @@
-# OpenCode for Android — local core, original UI, terminal
+# OpenCode for Android — local core, local models, hub, dynamic island
 
 An Android shell that runs the **original OpenCode 2.2.2** inside an embedded Ubuntu ARM64 via PRoot. Its unmodified web UI opens in an Android WebView. Sessions, tools, permissions, files and the terminal are served by the OpenCode core on the phone itself. No computer, remote OpenCode or separate Termux is needed. For the LLM you can connect your own OpenAI-compatible server.
 
@@ -14,6 +14,27 @@ This is a port of the original web UI, not a redrawn simplified chat. Full parit
 5. Android "Back" navigates history; after leaving to the start screen you can open the log or stop the core. Uninstalling the app removes local projects and sessions.
 
 The core listens only on `127.0.0.1` on a random port and is protected by a random password. The UI is authorised with a one-time pairing code. An Android foreground service keeps the process alive and shows a notification with a stop button. Android/OEM may still kill the process under memory or power restrictions.
+
+## Local models (llama.cpp)
+
+**Models** on the start screen runs LLMs entirely on the phone with the official llama.cpp server, which ships in the APK (`/opt/llama`, ARM64 with runtime CPU-feature dispatch, so ARMv8.2 to ARMv9 phones use the fastest kernels).
+
+- A curated list (Qwen3 4B, Qwen2.5 Coder 1.5B/3B/7B, Qwen3 1.7B, Llama 3.2 3B, Gemma 3 4B) plus a **Hugging Face search** over GGUF repositories: pick a repository, then a quantisation file.
+- Downloads resume after interruptions and are stored in the app's private storage (`models/`), so they work offline afterwards.
+- **Run** starts `llama-server` on `127.0.0.1:8081` (OpenAI-compatible, `--jinja` for tool calls). **Use in OpenCode** writes the `local` provider to the OpenCode config and restarts the core; the model keeps running.
+- Rule of thumb: 3–4B models at Q4_K_M need about 3 GB of free RAM, 7B about 6 GB. Speed depends on the SoC; small models are the practical choice for agent work on a phone.
+
+## Hub: skills, commands, agents, MCP, plugins
+
+**Hub** installs extensions straight into OpenCode's config inside the environment: skills (`skills/<name>/SKILL.md`), slash commands, subagents, remote MCP servers (Context7, grep.app, DeepWiki, Hugging Face) and npm plugins. It also installs a skill from any GitHub `SKILL.md` link. The catalog is bundled and can be refreshed from this repository (`app/src/main/assets/hub/catalog.json`) without a new APK. Restart the core to apply changes.
+
+## Dynamic island
+
+On phones with a punch-hole camera (made for the Galaxy S23 Ultra) a black pill over the camera shows what the agent is doing: a compact pulsing pill with a timer while it works, an expanded card for finished tasks, permission requests, questions and errors. The same events are sent as heads-up notifications. It follows the OpenCode event stream of the local core. Enable it on the start screen; Android asks for the "display over other apps" permission.
+
+## Updates
+
+The app checks GitHub Releases (at most every 6 hours, or on demand) and offers to download and install a newer APK. Updates install over the old version only if both are signed with the same key: release builds use the key from the repository secrets `KEYSTORE_B64` and `KEYSTORE_PASSWORD`; without them CI falls back to a debug key.
 
 ## Terminal
 
@@ -70,7 +91,8 @@ Run the integration test on a dedicated test device/emulator: it restarts the co
 - The workspace lives inside the app. The Android file picker is supported for attachments; downloads from the UI are saved through the system dialog (up to 25 MB).
 - The microphone is requested from Android on demand by the original UI. Voice features need a suitable provider.
 - The full OAuth, MCP, LSP, GUI plugin, external-browser return and desktop-integration matrix has not been exercised. The presence of the original UI alone does not prove 100% functional parity.
-- The development tools are bundled, so first launch works offline. The LLM needs network access unless a model runs separately on the phone.
+- The development tools and llama.cpp are bundled, so first launch works offline. Models are downloaded on demand from Hugging Face; an LLM provider other than a local model needs network access.
+- OpenCode plugins are npm packages installed by the core on first use (internet needed once); MCP servers listed in the Hub are remote.
 - The app UI is available in English (default) and Russian (follows the device language).
 
 Sources and licenses of bundled components: [THIRD_PARTY.md](THIRD_PARTY.md). OpenCode is not modified; this project is not an official Anomaly app.

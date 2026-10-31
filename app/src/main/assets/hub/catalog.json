@@ -1,0 +1,239 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "type": "skill",
+   "id": "code-review",
+   "title": "code-review",
+   "desc": "Review a diff or pull request for bugs, risks and missing tests",
+   "desc_ru": "Ревью диффа или PR: баги, риски, недостающие тесты",
+   "files": {
+    "SKILL.md": "---\nname: code-review\ndescription: Review a diff or pull request for bugs, risks and missing tests\n---\n\n# Code review\n1. Run `git diff` (or `git diff main...HEAD`) and read every changed file in full context.\n2. Look for: logic errors, unhandled edge cases, security issues, race conditions, API breakage, missing tests.\n3. Report findings ordered by severity, each with file:line, why it is a problem and a concrete fix.\n4. Do not comment on style unless it hides a bug. If nothing is wrong, say so plainly.\n"
+   }
+  },
+  {
+   "type": "skill",
+   "id": "git-commit",
+   "title": "git-commit",
+   "desc": "Write clear Conventional Commit messages from staged changes",
+   "desc_ru": "Понятные Conventional Commits по staged-изменениям",
+   "files": {
+    "SKILL.md": "---\nname: git-commit\ndescription: Write clear Conventional Commit messages from staged changes\n---\n\n# Git commit\n1. Run `git status` and `git diff --staged`. If nothing is staged, ask what to stage.\n2. Write a subject line `type(scope): summary` (feat, fix, refactor, docs, test, chore), max 72 chars, imperative mood.\n3. Add a short body explaining *why* when the change is not obvious.\n4. Commit with `git commit`. Never push unless asked.\n"
+   }
+  },
+  {
+   "type": "skill",
+   "id": "debugging",
+   "title": "debugging",
+   "desc": "Systematic root-cause debugging: reproduce, isolate, fix, verify",
+   "desc_ru": "Системная отладка: воспроизвести, изолировать, исправить, проверить",
+   "files": {
+    "SKILL.md": "---\nname: debugging\ndescription: Systematic root-cause debugging: reproduce, isolate, fix, verify\n---\n\n# Debugging\n1. Reproduce the failure first and capture the exact error. No fix before a reproduction.\n2. Form 2-3 hypotheses, test the cheapest first (logs, minimal repro, bisect with `git bisect`).\n3. Fix the root cause, not the symptom. Keep the change minimal.\n4. Add a regression test, rerun the original reproduction and the test suite.\n"
+   }
+  },
+  {
+   "type": "skill",
+   "id": "write-tests",
+   "title": "write-tests",
+   "desc": "Add focused unit tests that match the project conventions",
+   "desc_ru": "Добавление тестов в стиле проекта",
+   "files": {
+    "SKILL.md": "---\nname: write-tests\ndescription: Add focused unit tests that match the project conventions\n---\n\n# Writing tests\n1. Find the existing test framework and naming conventions before writing anything.\n2. Cover the happy path, boundaries, error paths and one regression case per bug.\n3. Prefer small deterministic tests; avoid network, time and randomness unless injected.\n4. Run the tests and show the result. Fix flaky tests instead of retrying them.\n"
+   }
+  },
+  {
+   "type": "skill",
+   "id": "refactor-safely",
+   "title": "refactor-safely",
+   "desc": "Refactor in small verified steps without changing behavior",
+   "desc_ru": "Безопасный рефакторинг маленькими проверяемыми шагами",
+   "files": {
+    "SKILL.md": "---\nname: refactor-safely\ndescription: Refactor in small verified steps without changing behavior\n---\n\n# Safe refactoring\n1. Make sure tests pass before you start; add characterization tests if coverage is missing.\n2. One kind of change per step (rename, extract, move). Run the tests after each step.\n3. Never mix refactoring with behavior changes in the same commit.\n4. Summarize what moved and confirm that behavior is unchanged.\n"
+   }
+  },
+  {
+   "type": "skill",
+   "id": "explain-codebase",
+   "title": "explain-codebase",
+   "desc": "Map an unfamiliar repository: entry points, structure, data flow",
+   "desc_ru": "Обзор незнакомого репозитория: точки входа, структура, потоки данных",
+   "files": {
+    "SKILL.md": "---\nname: explain-codebase\ndescription: Map an unfamiliar repository: entry points, structure, data flow\n---\n\n# Explain a codebase\n1. Read README, build files and the top-level tree. Use `rg --files` and `rg` to find entry points.\n2. Describe: purpose, main modules, how data flows, how to build, run and test.\n3. Point to specific files with `path:line`. Flag dead code, risky areas and missing docs.\n4. End with a short \"where to start changing X\" guide.\n"
+   }
+  },
+  {
+   "type": "skill",
+   "id": "android-dev",
+   "title": "android-dev",
+   "desc": "Build, test and lint Android projects from the command line",
+   "desc_ru": "Сборка, тесты и lint Android-проектов из командной строки",
+   "files": {
+    "SKILL.md": "---\nname: android-dev\ndescription: Build, test and lint Android projects from the command line\n---\n\n# Android development\n1. Use the Gradle wrapper: `./gradlew assembleDebug`, `testDebugUnitTest`, `lint`.\n2. Read build errors from the first failure up; fix root causes in Manifest, resources and Gradle files.\n3. Keep minSdk/targetSdk decisions explicit and mention permission or lifecycle impacts of a change.\n4. Prefer small, testable classes; keep UI work on the main thread and I/O off it.\n"
+   }
+  },
+  {
+   "type": "skill",
+   "id": "security-audit",
+   "title": "security-audit",
+   "desc": "Look for common vulnerabilities and leaked secrets in a repository",
+   "desc_ru": "Поиск типовых уязвимостей и утечек секретов",
+   "files": {
+    "SKILL.md": "---\nname: security-audit\ndescription: Look for common vulnerabilities and leaked secrets in a repository\n---\n\n# Security audit\n1. Search for secrets: `rg -n \"(api[_-]?key|secret|token|password)\\s*[:=]\"` and review `.env` files and history.\n2. Check input handling (injection, path traversal, deserialization), authN/authZ and dependency risks.\n3. Rate each finding (critical/high/medium/low) with an exploit scenario and a fix.\n4. Do not exploit anything; report only.\n"
+   }
+  },
+  {
+   "type": "command",
+   "id": "review",
+   "title": "/review",
+   "desc": "Slash command: review the current changes",
+   "desc_ru": "Команда /review: проверить текущие изменения",
+   "files": {
+    "review.md": "---\ndescription: Review the current uncommitted changes\n---\nReview the output of `git diff` and `git diff --staged`. List bugs, risks and missing tests ordered by severity, with file:line and a suggested fix.\n"
+   }
+  },
+  {
+   "type": "command",
+   "id": "commit",
+   "title": "/commit",
+   "desc": "Slash command: commit staged changes with a good message",
+   "desc_ru": "Команда /commit: закоммитить staged-изменения",
+   "files": {
+    "commit.md": "---\ndescription: Commit staged changes\n---\nLook at `git diff --staged`, write a Conventional Commit message and run `git commit`. Do not push.\n"
+   }
+  },
+  {
+   "type": "command",
+   "id": "explain",
+   "title": "/explain",
+   "desc": "Slash command: explain a file or function in plain language",
+   "desc_ru": "Команда /explain: объяснить файл или функцию",
+   "files": {
+    "explain.md": "---\ndescription: Explain code in plain language\n---\nExplain $ARGUMENTS in plain language: what it does, how it works and what to watch out for.\n"
+   }
+  },
+  {
+   "type": "agent",
+   "id": "security-auditor",
+   "title": "security-auditor",
+   "desc": "Read-only subagent that audits code for vulnerabilities",
+   "desc_ru": "Субагент (только чтение): аудит уязвимостей",
+   "files": {
+    "security-auditor.md": "---\ndescription: Audits code for security issues without modifying it\nmode: subagent\ntools:\n  write: false\n  edit: false\n  bash: false\n---\nYou are a security auditor. Read the code, find vulnerabilities and leaked secrets, and report them with severity, file:line and a fix. Never modify files.\n"
+   }
+  },
+  {
+   "type": "agent",
+   "id": "docs-writer",
+   "title": "docs-writer",
+   "desc": "Subagent that writes and updates documentation",
+   "desc_ru": "Субагент: пишет и обновляет документацию",
+   "files": {
+    "docs-writer.md": "---\ndescription: Writes clear technical documentation\nmode: subagent\n---\nYou write concise, accurate documentation. Read the code first, never invent behavior, include runnable examples.\n"
+   }
+  },
+  {
+   "type": "mcp",
+   "id": "context7",
+   "title": "context7",
+   "desc": "Up-to-date library docs and code examples for any prompt",
+   "desc_ru": "Актуальная документация библиотек",
+   "config": {
+    "type": "remote",
+    "url": "https://mcp.context7.com/mcp",
+    "enabled": true
+   }
+  },
+  {
+   "type": "mcp",
+   "id": "grep_app",
+   "title": "grep_app",
+   "desc": "Search real-world code on GitHub with grep.app",
+   "desc_ru": "Поиск по реальному коду на GitHub",
+   "config": {
+    "type": "remote",
+    "url": "https://mcp.grep.app",
+    "enabled": true
+   }
+  },
+  {
+   "type": "mcp",
+   "id": "deepwiki",
+   "title": "deepwiki",
+   "desc": "Ask questions about any GitHub repository",
+   "desc_ru": "Вопросы по любому репозиторию GitHub",
+   "config": {
+    "type": "remote",
+    "url": "https://mcp.deepwiki.com/mcp",
+    "enabled": true
+   }
+  },
+  {
+   "type": "mcp",
+   "id": "huggingface",
+   "title": "huggingface",
+   "desc": "Search models, datasets and papers on Hugging Face",
+   "desc_ru": "Поиск моделей, датасетов и статей на Hugging Face",
+   "config": {
+    "type": "remote",
+    "url": "https://huggingface.co/mcp",
+    "enabled": true
+   }
+  },
+  {
+   "type": "plugin",
+   "id": "@tarquinen/opencode-dcp",
+   "title": "@tarquinen/opencode-dcp",
+   "desc": "Prunes obsolete tool output to save tokens",
+   "desc_ru": "Убирает устаревший вывод инструментов, экономит токены",
+   "package": "@tarquinen/opencode-dcp"
+  },
+  {
+   "type": "plugin",
+   "id": "opencode-supermemory",
+   "title": "opencode-supermemory",
+   "desc": "Persistent memory across sessions",
+   "desc_ru": "Постоянная память между сессиями",
+   "package": "opencode-supermemory"
+  },
+  {
+   "type": "plugin",
+   "id": "@mohak34/opencode-notifier",
+   "title": "@mohak34/opencode-notifier",
+   "desc": "Notifications and sounds on completion or permission requests",
+   "desc_ru": "Уведомления и звуки по завершении и запросах",
+   "package": "@mohak34/opencode-notifier"
+  },
+  {
+   "type": "plugin",
+   "id": "opencode-wakatime",
+   "title": "opencode-wakatime",
+   "desc": "Track coding time with WakaTime",
+   "desc_ru": "Учёт времени кодинга в WakaTime",
+   "package": "opencode-wakatime"
+  },
+  {
+   "type": "plugin",
+   "id": "opencode-pty",
+   "title": "opencode-pty",
+   "desc": "Run and control background processes in a PTY",
+   "desc_ru": "Фоновые процессы в PTY",
+   "package": "opencode-pty"
+  },
+  {
+   "type": "plugin",
+   "id": "opencode-gemini-auth",
+   "title": "opencode-gemini-auth",
+   "desc": "Sign in with a Google account for Gemini",
+   "desc_ru": "Вход через аккаунт Google для Gemini",
+   "package": "opencode-gemini-auth"
+  },
+  {
+   "type": "plugin",
+   "id": "opencode-openai-codex-auth",
+   "title": "opencode-openai-codex-auth",
+   "desc": "Use a ChatGPT Plus/Pro subscription as a provider",
+   "desc_ru": "Подписка ChatGPT Plus/Pro как провайдер",
+   "package": "opencode-openai-codex-auth"
+  }
+ ]
+}
