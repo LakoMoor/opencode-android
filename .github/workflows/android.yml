@@ -29,18 +29,30 @@ jobs:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
         run: |
           if [ -n "$KEYSTORE_B64" ]; then echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"; echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"; fi
-      - run: ./gradlew assembleDebug testDebugUnitTest lint
+      - run: ./gradlew assembleRelease testDebugUnitTest lint
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      - name: Package the APK (v1+v2+v3 signatures)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          NAME="opencode-android-${GITHUB_REF_NAME//\//-}.apk"
+          APK=app/build/outputs/apk/release/app-release.apk
+          if [ -n "$KEYSTORE_FILE" ]; then
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$KEYSTORE_FILE" --ks-key-alias opencode --ks-pass env:KEYSTORE_PASSWORD \
+              --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --min-sdk-version 26 --out "$NAME" "$APK"
+          else
+            cp "$APK" "$NAME"
+          fi
+          echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
-          name: opencode-android-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: opencode-android
+          path: ${{ env.APK_NAME }}
       - name: Attach APK to the release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk "opencode-android-${GITHUB_REF_NAME}-debug.apk"
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
-          gh release upload "$GITHUB_REF_NAME" "opencode-android-${GITHUB_REF_NAME}-debug.apk" --clobber
+          gh release upload "$GITHUB_REF_NAME" "$APK_NAME" --clobber

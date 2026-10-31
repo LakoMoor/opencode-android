@@ -6,11 +6,12 @@ android {
     // Stable signing key (from env / CI secrets) so in-app updates install over the previous version; falls back to the debug key.
     signingConfigs {
         if (System.getenv('KEYSTORE_FILE')) {
-            release { storeFile file(System.getenv('KEYSTORE_FILE')); storePassword System.getenv('KEYSTORE_PASSWORD'); keyAlias 'opencode'; keyPassword System.getenv('KEYSTORE_PASSWORD') }
+            release { storeFile file(System.getenv('KEYSTORE_FILE')); storePassword System.getenv('KEYSTORE_PASSWORD'); keyAlias 'opencode'; keyPassword System.getenv('KEYSTORE_PASSWORD'); enableV1Signing true; enableV2Signing true; enableV3Signing true }
         }
     }
     buildTypes {
         debug { if (System.getenv('KEYSTORE_FILE')) signingConfig signingConfigs.release }
+        release { debuggable false; minifyEnabled false; signingConfig System.getenv('KEYSTORE_FILE') ? signingConfigs.release : signingConfigs.debug }
     }
     // PRoot must execute guest ELF files in app-private storage; Android blocks this for target >= 29.
     // This APK is distributed directly, so the Google Play target requirement does not apply.

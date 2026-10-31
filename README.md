@@ -6,7 +6,7 @@ This is a port of the original web UI, not a redrawn simplified chat. Full parit
 
 ## Install and run
 
-1. Install the APK from the [Releases](../../releases) page (or `app/build/outputs/apk/debug/app-debug.apk` after building) on an ARM64 device with Android 8.0+. A current Android System WebView is required.
+1. Install the APK from the [Releases](../../releases) page (or `app/build/outputs/apk/release/app-release.apk` after building) on an ARM64 device with Android 8.0+. A current Android System WebView is required.
 2. Keep at least **1.5 GB** of free storage. The APK is fully self-contained: Ubuntu, the OpenCode core and the dev tools (Git, Python 3, curl, ripgrep, SSH, CA certificates) ship inside the APK already unpacked and are simply copied into the environment — no `apt`/`dpkg` and no internet needed. Internet is only required for your LLM provider.
    Measured on an Android 14 ARM64 emulator in airplane mode: first launch to a ready UI takes **68 s**, later launches about **9 s**. Node.js/npm are not bundled.
 3. The core starts when the app opens; the original UI opens when you tap the button (or automatically after a start you triggered). Projects live locally in `/workspace` (the app's private directory).
@@ -73,7 +73,7 @@ export ANDROID_HOME=/path/to/android/sdk
 
 `prepare-runtime.py` fetches the pinned upstream archives, verifies SHA-256 from `runtime/lock.json`, and prepares assets and ARM64 libraries. `prepare-tools.py` resolves Ubuntu 24.04 packages and their dependencies, verifies them against the archive index and bundles them as a pre-extracted overlay. Large binaries are excluded from Git. Archives are packed as `.tgz` so Android's Asset Manager does not alter their contents or names.
 
-APK: `app/build/outputs/apk/debug/app-debug.apk` (about 180 MB). It is signed with the debug key and meant for testing. GitHub Actions repeats the preparation and build.
+APK: `app/build/outputs/apk/release/app-release.apk` (about 190 MB), a non-debuggable release build. CI signs it with v1+v2+v3 using the repository key when `KEYSTORE_B64` is set, otherwise with the debug key. GitHub Actions repeats the preparation and build.
 
 **Why targetSdk 28:** PRoot runs guest Linux ELF files from app-private storage. Android forbids such `exec` for apps with targetSdk ≥ 29. This is a deliberate limitation of this distribution scheme; the build does not meet Google Play requirements. The lint check `ExpiredTargetSdkVersion` is disabled with an explanation in Gradle; all other checks run.
 
