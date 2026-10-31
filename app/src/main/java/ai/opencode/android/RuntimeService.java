@@ -34,6 +34,7 @@ public class RuntimeService extends Service {
         PendingIntent content=PendingIntent.getActivity(this,0,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         Intent stop=new Intent(this,RuntimeService.class).setAction("stop");
         PendingIntent action=PendingIntent.getService(this,1,stop,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+        Island.start(this);
         startForeground(1,new Notification.Builder(this,"runtime").setSmallIcon(ai.opencode.android.R.drawable.ic_launcher).setContentTitle(L.t("OpenCode is running on your phone","OpenCode работает на телефоне")).setContentText(L.t("Local projects, tools and terminal","Локальные проекты, инструменты и терминал")).setContentIntent(content).setOngoing(true).addAction(new Notification.Action.Builder(null,L.t("Stop","Остановить"),action).build()).build());
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId) {

@@ -1,0 +1,4 @@
+<resources>
+    <string name="island_service_label">OpenCode dynamic island</string>
+    <string name="island_service_description">Draws the dynamic island around the camera so it can be tapped. It does not read or collect anything on your screen.</string>
+</resources>

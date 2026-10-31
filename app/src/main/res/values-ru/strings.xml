@@ -1,0 +1,4 @@
+<resources>
+    <string name="island_service_label">Dynamic island OpenCode</string>
+    <string name="island_service_description">Рисует dynamic island вокруг камеры, чтобы на него можно было нажимать. Ничего не читает и не собирает с экрана.</string>
+</resources>

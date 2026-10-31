@@ -30,7 +30,13 @@ The core listens only on `127.0.0.1` on a random port and is protected by a rand
 
 ## Dynamic island
 
-On phones with a punch-hole camera (made for the Galaxy S23 Ultra) a black pill over the camera shows what the agent is doing: a compact pulsing pill with a timer while it works, an expanded card for finished tasks, permission requests, questions and errors. The same events are sent as heads-up notifications. It follows the OpenCode event stream of the local core. Enable it on the start screen; Android asks for the "display over other apps" permission.
+Made for phones with a punch-hole camera such as the Galaxy S23 Ultra. A black pill grows around the camera and its content sits on both sides of it, never under it:
+
+- **Working** — a compact pill: pulsing dot on the left, elapsed timer on the right.
+- **Events** — a wider pill: dot and title on the left, detail on the right (task finished, permission needed, question, error). The same events are posted as heads-up notifications.
+- **Tap the camera** — the pill opens a panel with the current status, the running local model, the last events and **Open / TUI / Stop** actions. Tap again or outside to close.
+
+It follows the OpenCode event stream of the local core. Android's status bar swallows touches in the camera area for normal overlay windows, so for a tappable camera enable **Accessibility mode** (Settings → Accessibility → OpenCode dynamic island). The service only draws the island, it reads nothing from the screen. Without it the island still shows (overlay permission "display over other apps"), but only the part below the status bar is tappable.
 
 ## Updates
 

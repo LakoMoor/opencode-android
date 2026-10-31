@@ -80,12 +80,18 @@ public class MainActivity extends Activity {
     }
     private void drawIsland() {
         islandRow.removeAllViews();
-        boolean on=Island.enabled(this),perm=Island.allowed(this);
-        String sub=!perm?L.t("needs the “display over other apps” permission — tap to grant","нужно разрешение «поверх других окон» — нажмите, чтобы выдать"):on?L.t("pill over the camera shows agent progress, questions and results","капсула над камерой показывает прогресс, вопросы и результат"):L.t("off — notifications only","выключен — только уведомления");
-        islandRow.addView(ui.item(L.t("Dynamic island","Dynamic island"),sub,on&&perm?"on":"off",on&&perm?Ui.GREEN:Ui.DIM,()->{
-            if(!perm){Island.requestPermission(this);return;}
-            Island.setEnabled(this,!on);drawIsland();if(!on)Island.notifyEvent(this,Island.INFO,L.t("Dynamic island is on","Dynamic island включён"),"OpenCode");
+        boolean on=Island.enabled(this),perm=Island.allowed(this),tap=Island.accessible();
+        String sub=!perm?L.t("needs a permission — tap to set up","нужно разрешение — нажмите, чтобы настроить"):!on?L.t("off — notifications only","выключен — только уведомления"):tap?L.t("around the camera: progress, questions, results; tap the camera for quick actions","вокруг камеры: прогресс, вопросы, результат; нажмите на камеру — быстрые действия"):L.t("around the camera (display only). Enable accessibility mode to make the camera tappable","вокруг камеры (только показ). Включите режим специальных возможностей, чтобы камера нажималась");
+        islandRow.addView(ui.item("Dynamic island",sub,on&&perm?"on":"off",on&&perm?Ui.GREEN:Ui.DIM,()->{
+            if(!perm||(on&&!tap)) { islandSetup(perm); return; }
+            Island.setEnabled(this,!on);drawIsland();if(!on)Island.notifyEvent(this,Island.INFO,L.t("Island is on","Остров включён"),L.t("tap the camera","нажмите на камеру"));
         }));
+    }
+    private void islandSetup(boolean perm) {
+        new AlertDialog.Builder(this).setTitle("Dynamic island").setMessage(L.t("Accessibility mode (recommended) puts the island above the status bar so the camera is tappable. It only draws the island and reads nothing. Overlay mode only displays it.","Режим специальных возможностей (рекомендуется) ставит остров над строкой состояния, и на камеру можно нажимать. Он только рисует остров и ничего не читает. Режим оверлея только показывает остров."))
+            .setPositiveButton(L.t("Accessibility","Спец. возможности"),(d,w)->Island.openSettings(this))
+            .setNeutralButton(L.t("Overlay only","Только оверлей"),(d,w)->{if(Island.allowed(this)){Island.setEnabled(this,true);drawIsland();}else Island.requestPermission(this);})
+            .setNegativeButton(L.t("Turn off","Выключить"),(d,w)->{Island.setEnabled(this,false);drawIsland();}).show();
     }
     private void checkUpdate(boolean manual) {
         long last=getSharedPreferences("runtime",0).getLong("updateCheck",0);
